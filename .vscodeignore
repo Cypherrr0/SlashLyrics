@@ -13,3 +13,6 @@ tsconfig*.json
 .gitignore
 meta.json
 *.tsbuildinfo
+out/**/*.tsbuildinfo
+log/
+logs/
