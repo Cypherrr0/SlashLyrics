@@ -1,0 +1,136 @@
+{
+    "name": "slashlyrics",
+    "displayName": "SlashLyrics",
+    "version": "0.1.0",
+    "description": "Display currently playing music lyrics as ghost comments in your code editor",
+    "publisher": "slashlyrics",
+    "private": true,
+    "author": {
+        "name": "zhangyunzhong"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/slashlyrics/slashlyrics"
+    },
+    "keywords": [
+        "lyrics",
+        "music",
+        "spotify",
+        "apple-music",
+        "now-playing"
+    ],
+    "categories": [
+        "Other"
+    ],
+    "main": "./out/src/extension.js",
+    "icon": "assets/icon.png",
+    "engines": {
+        "vscode": "^1.74.0"
+    },
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "slashlyrics.toggle",
+                "title": "SlashLyrics: Toggle"
+            },
+            {
+                "command": "slashlyrics.searchLyrics",
+                "title": "SlashLyrics: Search Lyrics"
+            },
+            {
+                "command": "slashlyrics.clearCache",
+                "title": "SlashLyrics: Clear Cache"
+            }
+        ],
+        "configuration": {
+            "title": "SlashLyrics",
+            "properties": {
+                "slashlyrics.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable or disable SlashLyrics"
+                },
+                "slashlyrics.displayMode": {
+                    "type": "string",
+                    "default": "cursor-line",
+                    "enum": ["cursor-line", "top-line", "fixed-line"],
+                    "description": "Where to display lyrics"
+                },
+                "slashlyrics.color": {
+                    "type": "string",
+                    "default": "#6b7280",
+                    "description": "Lyric text color"
+                },
+                "slashlyrics.prefix": {
+                    "type": "string",
+                    "default": "♪ ",
+                    "description": "Prefix before lyric text"
+                },
+                "slashlyrics.showTranslation": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show translated lyrics alongside original"
+                },
+                "slashlyrics.translationSeparator": {
+                    "type": "string",
+                    "default": " | ",
+                    "description": "Separator between original and translated lyrics"
+                },
+                "slashlyrics.providers": {
+                    "type": "array",
+                    "default": ["netease", "qq"],
+                    "description": "Lyrics provider priority order"
+                },
+                "slashlyrics.pollInterval": {
+                    "type": "number",
+                    "default": 1000,
+                    "description": "Polling interval in ms when music is playing"
+                },
+                "slashlyrics.pauseOnBlur": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pause polling when editor loses focus"
+                }
+            }
+        },
+        "colors": [
+            {
+                "id": "slashlyrics.lyricColor",
+                "description": "Color for lyric text in editor",
+                "defaults": {
+                    "dark": "#6b728099",
+                    "light": "#9ca3af99",
+                    "highContrast": "#ffffff99"
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run esbuild:base -- --minify",
+        "clean": "npx rimraf -rf ./out",
+        "esbuild:base": "tsx scripts/esbuild.ts",
+        "esbuild:watch": "npm run esbuild:base -- --sourcemap --watch",
+        "compile": "tsc -b ./src/tsconfig.json",
+        "compile:test": "npm run clean && tsc -b ./test/tsconfig.json",
+        "lint": "eslint src --ext ts",
+        "test:unit": "mocha --require tsx 'test/unit/**/*.test.ts'",
+        "test": "npm run test:unit",
+        "package": "vsce package --no-dependencies"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.7",
+        "@types/node": "~20.16.2",
+        "@types/vscode": "1.74.0",
+        "@vscode/vsce": "^3.0.0",
+        "esbuild": "~0.23.1",
+        "eslint": "^8.57.0",
+        "mocha": "^10.7.3",
+        "rimraf": "^6.0.1",
+        "tsx": "^4.19.0",
+        "typescript": "~5.5.4"
+    }
+}

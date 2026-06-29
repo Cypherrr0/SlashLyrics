@@ -1,0 +1,10 @@
+out/
+node_modules/
+*.vsix
+meta.json
+bin/
+.slashlyrics/
+*.tsbuildinfo
+test/
+references/
+log/

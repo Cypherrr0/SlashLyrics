@@ -1,0 +1,15 @@
+.vscode
+.github
+src/
+test/
+scripts/
+swift/
+references/
+docs/
+node_modules/
+*.ts
+!out/**/*.js
+tsconfig*.json
+.gitignore
+meta.json
+*.tsbuildinfo
