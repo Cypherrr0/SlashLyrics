@@ -127,6 +127,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     context.subscriptions.push(
+        vscode.window.onDidChangeTextEditorSelection((event) => {
+            if (!enabled || event.textEditor !== vscode.window.activeTextEditor) return;
+            decoration.refresh(event.textEditor);
+        }),
+    );
+
+    context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration('slashlyrics')) {
                 logger.info('[SlashLyrics] Configuration changed, reloading');
