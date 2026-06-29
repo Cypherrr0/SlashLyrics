@@ -56,6 +56,7 @@ Release asset: [slashlyrics-0.1.0.vsix](https://github.com/Cypherrr0/SlashLyrics
 | `slashlyrics.enabled` | `true` | Enable or disable SlashLyrics. |
 | `slashlyrics.displayMode` | `cursor-line` | Show lyrics on the cursor line, top line, or a fixed line. |
 | `slashlyrics.color` | `#6b7280` | Lyric decoration color. |
+| `slashlyrics.showColor` | `true` | Use the configured lyric decoration color. |
 | `slashlyrics.prefix` | `♪ ` | Prefix before each lyric. |
 | `slashlyrics.showTranslation` | `false` | Show translated lyrics alongside the original line. |
 | `slashlyrics.translationSeparator` | ` &#124; ` | Separator between original and translated lyrics. |

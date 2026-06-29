@@ -50,7 +50,8 @@ export class DecorationDisplay implements vscode.Disposable {
         const line = lyrics.lines[index];
         const config = vscode.workspace.getConfiguration('slashlyrics');
         const prefix = config.get<string>('prefix', '♪ ');
-        const color = config.get<string>('color', '#6b7280');
+        const showColor = config.get<boolean>('showColor', true);
+        const color = showColor ? config.get<string>('color', '#6b7280') : undefined;
         const showTranslation = config.get<boolean>('showTranslation', false);
 
         const text = `${prefix}${line.text}`;

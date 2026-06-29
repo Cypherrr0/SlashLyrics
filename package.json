@@ -64,6 +64,11 @@
                     "default": "#6b7280",
                     "description": "Lyric text color"
                 },
+                "slashlyrics.showColor": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Use the configured lyric text color"
+                },
                 "slashlyrics.prefix": {
                     "type": "string",
                     "default": "♪ ",
