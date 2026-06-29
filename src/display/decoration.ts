@@ -4,11 +4,19 @@ import { getCurrentLineIndex } from '../lyrics/parser';
 
 export class DecorationDisplay implements vscode.Disposable {
     private decorationType: vscode.TextEditorDecorationType;
+    private translationDecorationType: vscode.TextEditorDecorationType;
     private lastLyrics: Lyrics | null = null;
     private lastPosition = 0;
 
     constructor() {
         this.decorationType = vscode.window.createTextEditorDecorationType({
+            after: {
+                margin: '0 0 0 2em',
+                fontStyle: 'italic',
+            },
+            isWholeLine: true,
+        });
+        this.translationDecorationType = vscode.window.createTextEditorDecorationType({
             after: {
                 margin: '0 0 0 2em',
                 fontStyle: 'italic',
@@ -44,12 +52,11 @@ export class DecorationDisplay implements vscode.Disposable {
         const prefix = config.get<string>('prefix', '♪ ');
         const color = config.get<string>('color', '#6b7280');
         const showTranslation = config.get<boolean>('showTranslation', false);
-        const separator = config.get<string>('translationSeparator', ' | ');
 
-        let text = `${prefix}${line.text}`;
-        if (showTranslation && line.translation) {
-            text += `${separator}${line.translation}`;
-        }
+        const text = `${prefix}${line.text}`;
+        const translationText = showTranslation && line.translation
+            ? `${prefix}${line.translation}`
+            : undefined;
 
         const displayMode = config.get<string>('displayMode', 'cursor-line');
         let targetLine: number;
@@ -65,6 +72,7 @@ export class DecorationDisplay implements vscode.Disposable {
         }
 
         const range = new vscode.Range(targetLine, 0, targetLine, 0);
+        const translationTargetLine = targetLine > 0 ? targetLine - 1 : undefined;
         editor.setDecorations(this.decorationType, [
             {
                 range,
@@ -76,12 +84,24 @@ export class DecorationDisplay implements vscode.Disposable {
                 },
             },
         ]);
+        editor.setDecorations(this.translationDecorationType, translationText && translationTargetLine !== undefined ? [
+            {
+                range: new vscode.Range(translationTargetLine, 0, translationTargetLine, 0),
+                renderOptions: {
+                    after: {
+                        contentText: translationText,
+                        color,
+                    },
+                },
+            },
+        ] : []);
     }
 
     clear(editor: vscode.TextEditor): void {
         this.lastLyrics = null;
         this.lastPosition = 0;
         editor.setDecorations(this.decorationType, []);
+        editor.setDecorations(this.translationDecorationType, []);
     }
 
     reset(editor?: vscode.TextEditor): void {
@@ -89,10 +109,12 @@ export class DecorationDisplay implements vscode.Disposable {
         this.lastPosition = 0;
         if (editor) {
             editor.setDecorations(this.decorationType, []);
+            editor.setDecorations(this.translationDecorationType, []);
         }
     }
 
     dispose(): void {
         this.decorationType.dispose();
+        this.translationDecorationType.dispose();
     }
 }
