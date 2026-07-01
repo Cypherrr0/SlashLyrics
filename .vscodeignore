@@ -8,6 +8,7 @@ references/
 docs/
 node_modules/
 assets/
+!assets/readme-hero.png
 *.ts
 !out/**/*.js
 tsconfig*.json
