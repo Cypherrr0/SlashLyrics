@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2] - 2026-07-02
+
+### Fixed
+- Added the macOS MediaRemote helper build step so release packages can include `bin/nowplaying-helper`.
+- Updated Marketplace metadata with public package settings and the correct GitHub repository URL.
+- Updated README install and release links to point at the latest packaged version.
+- Aligned translated lyrics with original lyrics even when the two editor lines have different code lengths.
+
 ## [0.1.1] - 2026-07-02
 
 ### Added

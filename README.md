@@ -3,13 +3,13 @@
 </p>
 
 <p align="center">
-  <strong>Time-synced lyrics as ghost comments inside your IDE.</strong>
+  <strong>Time-synced lyrics as ghost comments inside VS Code.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Cypherrr0/SlashLyrics/releases/tag/v0.1.0"><img src="https://img.shields.io/github/v/release/Cypherrr0/SlashLyrics?style=flat-square&label=release" alt="Release"></a>
+  <a href="https://github.com/Cypherrr0/SlashLyrics/releases/latest"><img src="https://img.shields.io/github/v/release/Cypherrr0/SlashLyrics?style=flat-square&label=release" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-macOS-111827?style=flat-square&logo=apple&logoColor=white" alt="macOS">
-  <img src="https://img.shields.io/badge/editor-any%20IDE-7c3aed?style=flat-square" alt="Any IDE">
+  <img src="https://img.shields.io/badge/editor-VS%20Code-7c3aed?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f59e0b?style=flat-square" alt="MIT License"></a>
 </p>
 
@@ -17,13 +17,13 @@ SlashLyrics listens to the music already playing on your Mac and renders the cur
 
 ## Install
 
-Download the latest release package for your editor and install it locally:
+Download the latest release package and install it locally:
 
 ```bash
-slashlyrics-0.1.0.vsix
+code --install-extension slashlyrics-0.1.2.vsix
 ```
 
-Release asset: [slashlyrics-0.1.0.vsix](https://github.com/Cypherrr0/SlashLyrics/releases/download/v0.1.0/slashlyrics-0.1.0.vsix)
+Release asset: [slashlyrics-0.1.2.vsix](https://github.com/Cypherrr0/SlashLyrics/releases/download/v0.1.2/slashlyrics-0.1.2.vsix)
 
 ## What It Does
 
@@ -87,7 +87,7 @@ npm run package
 ## Requirements
 
 - macOS.
-- A supported IDE build for this extension package.
+- VS Code 1.74 or later.
 - A music player that integrates with macOS media controls, such as Spotify, Apple Music, NetEase Cloud Music, QQ Music, or a browser player that appears in Control Center.
 
 Windows and Linux support are planned.

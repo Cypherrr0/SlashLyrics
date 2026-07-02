@@ -1,0 +1,45 @@
+name: Package VSIX
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --registry https://registry.npmjs.org --replace-registry-host always
+
+      - name: Test
+        run: npm test
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package
+        run: npm run package
+
+      - name: Verify VSIX contents
+        run: |
+          VSIX="$(ls slashlyrics-*.vsix | head -n 1)"
+          unzip -l "$VSIX"
+          unzip -l "$VSIX" | grep 'extension/bin/nowplaying-helper'
+          unzip -l "$VSIX" | grep 'extension/assets/icon.png'
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slashlyrics-vsix
+          path: slashlyrics-*.vsix

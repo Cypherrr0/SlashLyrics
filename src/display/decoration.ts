@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { Lyrics } from '../lyrics/parser';
 import { getCurrentLineIndex } from '../lyrics/parser';
+import { alignDecorationContent } from './alignment';
 
 export class DecorationDisplay implements vscode.Disposable {
     private decorationType: vscode.TextEditorDecorationType;
@@ -74,12 +75,22 @@ export class DecorationDisplay implements vscode.Disposable {
 
         const range = new vscode.Range(targetLine, 0, targetLine, 0);
         const translationTargetLine = targetLine > 0 ? targetLine - 1 : undefined;
+        const displayText = translationText && translationTargetLine !== undefined
+            ? alignDecorationContent(
+                editor.document.lineAt(targetLine).text,
+                editor.document.lineAt(translationTargetLine).text,
+                text,
+                translationText,
+                Number(editor.options.tabSize) || 4,
+            )
+            : { primaryContent: text, secondaryContent: translationText };
+
         editor.setDecorations(this.decorationType, [
             {
                 range,
                 renderOptions: {
                     after: {
-                        contentText: text,
+                        contentText: displayText.primaryContent,
                         color,
                     },
                 },
@@ -90,7 +101,7 @@ export class DecorationDisplay implements vscode.Disposable {
                 range: new vscode.Range(translationTargetLine, 0, translationTargetLine, 0),
                 renderOptions: {
                     after: {
-                        contentText: translationText,
+                        contentText: displayText.secondaryContent,
                         color,
                     },
                 },

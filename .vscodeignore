@@ -9,9 +9,16 @@ docs/
 node_modules/
 assets/
 !assets/readme-hero.png
+!assets/icon.png
+!bin/nowplaying-helper
 *.ts
-!out/**/*.js
+out/**
+!out/
+!out/src/
+!out/src/extension.js
 tsconfig*.json
+out/**/*.d.ts
+out/**/*.map
 .gitignore
 meta.json
 *.tsbuildinfo
