@@ -14,8 +14,14 @@ if (platform() !== 'darwin') {
     process.exit(0);
 }
 
-const swiftc = spawnSync('xcrun', ['--find', 'swiftc'], { encoding: 'utf8' });
-if (swiftc.status !== 0) {
+const sdk = spawnSync('xcrun', ['--sdk', 'macosx', '--show-sdk-path'], { encoding: 'utf8' });
+if (sdk.status !== 0 || !sdk.stdout.trim()) {
+    console.warn('[SlashLyrics] macOS SDK not found; MediaRemote helper will not be packaged');
+    process.exit(0);
+}
+
+const swiftc = spawnSync('xcrun', ['--sdk', 'macosx', '--find', 'swiftc'], { encoding: 'utf8' });
+if (swiftc.status !== 0 || !swiftc.stdout.trim()) {
     console.warn('[SlashLyrics] swiftc not found; MediaRemote helper will not be packaged');
     process.exit(0);
 }
@@ -28,8 +34,22 @@ if (!existsSync(source)) {
 await mkdir(dirname(output), { recursive: true });
 
 const result = spawnSync(
-    swiftc.stdout.trim(),
-    ['-O', '-o', output, source, '-framework', 'Foundation'],
+    'xcrun',
+    [
+        '--sdk',
+        'macosx',
+        'swiftc',
+        '-O',
+        '-target',
+        process.env.SLASHLYRICS_HELPER_TARGET || 'x86_64-apple-macosx13.0',
+        '-sdk',
+        sdk.stdout.trim(),
+        '-o',
+        output,
+        source,
+        '-framework',
+        'Foundation',
+    ],
     { stdio: 'inherit' },
 );
 

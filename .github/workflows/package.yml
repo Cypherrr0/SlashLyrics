@@ -25,6 +25,12 @@ jobs:
       - name: Compile
         run: npm run compile
 
+      - name: Show Xcode environment
+        run: |
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-path
+          xcrun --sdk macosx --find swiftc
+
       - name: Package
         run: npm run package
 
