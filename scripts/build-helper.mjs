@@ -9,6 +9,11 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = resolve(root, 'swift/nowplaying-helper.swift');
 const output = resolve(root, 'bin/nowplaying-helper');
 
+if (process.env.SLASHLYRICS_SKIP_HELPER === '1') {
+    console.log('[SlashLyrics] Skipping MediaRemote helper build by SLASHLYRICS_SKIP_HELPER=1');
+    process.exit(0);
+}
+
 if (platform() !== 'darwin') {
     console.log('[SlashLyrics] Skipping MediaRemote helper build outside macOS');
     process.exit(0);

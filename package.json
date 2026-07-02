@@ -129,7 +129,8 @@
         "lint": "eslint src --ext ts",
         "test:unit": "mocha --require tsx 'test/unit/**/*.test.ts'",
         "test": "npm run test:unit",
-        "package": "vsce package --no-dependencies"
+        "package": "vsce package --no-dependencies",
+        "package:local": "SLASHLYRICS_SKIP_HELPER=1 vsce package --no-dependencies"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.7",

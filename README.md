@@ -84,6 +84,14 @@ Build the extension bundle:
 npm run package
 ```
 
+For local package smoke tests that do not need the macOS MediaRemote helper:
+
+```bash
+npm run package:local
+```
+
+Release packages are built by the GitHub Actions macOS workflow so the VSIX includes `bin/nowplaying-helper`.
+
 ## Requirements
 
 - macOS.
