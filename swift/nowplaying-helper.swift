@@ -12,8 +12,6 @@ guard let bundle = CFBundleCreate(
 // Get function pointers
 typealias MRMediaRemoteGetNowPlayingInfoFunc = @convention(c)
     (DispatchQueue, @escaping ([String: Any]) -> Void) -> Void
-typealias MRMediaRemoteGetNowPlayingApplicationIsPlayingFunc = @convention(c)
-    (DispatchQueue, @escaping (Bool) -> Void) -> Void
 
 guard let getInfoPtr = CFBundleGetFunctionPointerForName(
     bundle, "MRMediaRemoteGetNowPlayingInfo" as CFString
@@ -22,46 +20,59 @@ guard let getInfoPtr = CFBundleGetFunctionPointerForName(
     exit(1)
 }
 
-guard let isPlayingPtr = CFBundleGetFunctionPointerForName(
-    bundle, "MRMediaRemoteGetNowPlayingApplicationIsPlaying" as CFString
-) else {
-    printJSON(["error": "MRMediaRemoteGetNowPlayingApplicationIsPlaying not found"])
-    exit(1)
-}
-
 let MRMediaRemoteGetNowPlayingInfo = unsafeBitCast(
     getInfoPtr, to: MRMediaRemoteGetNowPlayingInfoFunc.self
 )
-let MRMediaRemoteGetNowPlayingApplicationIsPlaying = unsafeBitCast(
-    isPlayingPtr, to: MRMediaRemoteGetNowPlayingApplicationIsPlayingFunc.self
-)
 
-// Check if playing first
-MRMediaRemoteGetNowPlayingApplicationIsPlaying(DispatchQueue.main) { isPlaying in
-    guard isPlaying else {
+// Some players expose metadata but return an unreliable global playing flag.
+MRMediaRemoteGetNowPlayingInfo(DispatchQueue.main) { info in
+    let title = stringValue(info, "kMRMediaRemoteNowPlayingInfoTitle")
+    let artist = stringValue(info, "kMRMediaRemoteNowPlayingInfoArtist")
+    let album = stringValue(info, "kMRMediaRemoteNowPlayingInfoAlbum")
+    let duration = doubleValue(info, "kMRMediaRemoteNowPlayingInfoDuration")
+    let elapsed = doubleValue(info, "kMRMediaRemoteNowPlayingInfoElapsedTime")
+    let playbackRate = optionalDoubleValue(info, "kMRMediaRemoteNowPlayingInfoPlaybackRate")
+
+    guard !title.isEmpty else {
         printJSON(["isPlaying": false])
         exit(0)
     }
 
-    MRMediaRemoteGetNowPlayingInfo(DispatchQueue.main) { info in
-        let title = info["kMRMediaRemoteNowPlayingInfoTitle"] as? String ?? ""
-        let artist = info["kMRMediaRemoteNowPlayingInfoArtist"] as? String ?? ""
-        let album = info["kMRMediaRemoteNowPlayingInfoAlbum"] as? String ?? ""
-        let duration = info["kMRMediaRemoteNowPlayingInfoDuration"] as? Double ?? 0
-        let elapsed = info["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? Double ?? 0
+    let result: [String: Any] = [
+        "title": title,
+        "artist": artist,
+        "album": album,
+        "duration": duration * 1000,
+        "position": elapsed * 1000,
+        "isPlaying": playbackRate.map { $0 != 0 } ?? true
+    ]
 
-        let result: [String: Any] = [
-            "title": title,
-            "artist": artist,
-            "album": album,
-            "duration": duration * 1000,
-            "position": elapsed * 1000,
-            "isPlaying": true
-        ]
+    printJSON(result)
+    exit(0)
+}
 
-        printJSON(result)
-        exit(0)
+func stringValue(_ dict: [String: Any], _ key: String) -> String {
+    if let value = dict[key] as? String {
+        return value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    return ""
+}
+
+func doubleValue(_ dict: [String: Any], _ key: String) -> Double {
+    return optionalDoubleValue(dict, key) ?? 0
+}
+
+func optionalDoubleValue(_ dict: [String: Any], _ key: String) -> Double? {
+    if let value = dict[key] as? Double {
+        return value
+    }
+    if let value = dict[key] as? NSNumber {
+        return value.doubleValue
+    }
+    if let value = dict[key] as? String, let parsed = Double(value) {
+        return parsed
+    }
+    return nil
 }
 
 func printJSON(_ dict: [String: Any]) {

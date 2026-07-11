@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2026-07-11
+
+### Fixed
+- Improved macOS Now Playing capture for players whose MediaRemote playback flag is unreliable, including NetEase Cloud Music and QQ Music.
+
 ## [0.1.2] - 2026-07-02
 
 ### Fixed
