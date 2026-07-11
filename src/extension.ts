@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import type { PlayerBackend, NowPlaying } from './player/index';
 import { MediaRemoteBackend } from './player/mediaremote';
+import { NeteaseBackend } from './player/netease';
 import { AppleScriptBackend } from './player/applescript';
+import { getNowPlayingFromBackends } from './player/selection';
 import { LyricsManager } from './lyrics/manager';
 import { DecorationDisplay } from './display/decoration';
 import { StatusBarDisplay } from './display/statusbar';
@@ -14,8 +16,10 @@ export function activate(context: vscode.ExtensionContext): void {
     logger.info('[SlashLyrics] Extension activated');
 
     const mediaRemoteBackend = new MediaRemoteBackend(context.extensionPath, logger);
+    const neteaseBackend = new NeteaseBackend(logger);
     const backends: PlayerBackend[] = [
         mediaRemoteBackend,
+        neteaseBackend,
         new AppleScriptBackend(),
     ];
 
@@ -57,7 +61,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('slashlyrics.diagnoseNowPlaying', async () => {
-            const report = await mediaRemoteBackend.diagnose();
+            const report = [
+                await mediaRemoteBackend.diagnose(),
+                '',
+                await neteaseBackend.diagnose(),
+            ].join('\n');
             logger.info(report);
             logger.show(true);
             await vscode.env.clipboard.writeText(report);
@@ -77,15 +85,11 @@ export function activate(context: vscode.ExtensionContext): void {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
 
-        let nowPlaying: NowPlaying | null = null;
-        for (const backend of backends) {
-            const start = performance.now();
-            nowPlaying = await backend.getNowPlaying();
-            logger.debug(`[Perf] ${backend.name}: ${(performance.now() - start).toFixed(1)}ms`);
-            if (nowPlaying) break;
-        }
+        const nowPlaying = await getNowPlayingFromBackends(backends, (backendName, elapsedMs) => {
+            logger.debug(`[Perf] ${backendName}: ${elapsedMs.toFixed(1)}ms`);
+        });
 
-        if (!nowPlaying || !nowPlaying.isPlaying) {
+        if (!nowPlaying) {
             statusBar.setIdle();
             decoration.clear(editor);
             return;

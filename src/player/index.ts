@@ -5,7 +5,7 @@ export interface NowPlaying {
     duration: number;
     position: number;
     isPlaying: boolean;
-    source: 'mediaremote' | 'applescript';
+    source: 'mediaremote' | 'netease' | 'applescript';
 }
 
 export interface PlayerBackend {

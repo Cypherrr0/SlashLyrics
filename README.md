@@ -20,10 +20,10 @@ SlashLyrics listens to the music already playing on your Mac and renders the cur
 Download the latest release package and install it locally:
 
 ```bash
-code --install-extension slashlyrics-0.1.2.vsix
+code --install-extension slashlyrics-0.1.7.vsix
 ```
 
-Release asset: [slashlyrics-0.1.2.vsix](https://github.com/Cypherrr0/SlashLyrics/releases/download/v0.1.2/slashlyrics-0.1.2.vsix)
+Release asset: [slashlyrics-0.1.7.vsix](https://github.com/Cypherrr0/SlashLyrics/releases/download/v0.1.7/slashlyrics-0.1.7.vsix)
 
 ## What It Does
 

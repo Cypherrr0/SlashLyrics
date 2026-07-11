@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.7] - 2026-07-12
+
+### Fixed
+- Added a NetEase Cloud Music local-state backend that reads encrypted `playingInfo` and `lastPlaying` data when macOS MediaRemote no longer exposes NetEase now-playing metadata.
+- Kept lyric position in sync with NetEase seek and pause state by using the local `lastPlaying.current` value and guarding against stale `playingInfo` metadata.
+- Preferred actively playing backends over paused fallback results so Apple Music can take over after NetEase is paused.
+- Returned paused Apple Music and Spotify track metadata instead of dropping the AppleScript backend result.
+
 ## [0.1.6] - 2026-07-11
 
 ### Changed

@@ -6,13 +6,14 @@ tell application "System Events"
   if not (exists process "Spotify") then return "NOT_RUNNING"
 end tell
 tell application "Spotify"
-  if player state is not playing then return "NOT_PLAYING"
   set t to name of current track
   set a to artist of current track
   set al to album of current track
   set d to duration of current track
   set p to player position
-  return t & "\\n" & a & "\\n" & al & "\\n" & d & "\\n" & p
+  set playingFlag to "false"
+  if player state is playing then set playingFlag to "true"
+  return t & "\\n" & a & "\\n" & al & "\\n" & d & "\\n" & p & "\\n" & playingFlag
 end tell`;
 
 const MUSIC_SCRIPT = `
@@ -20,13 +21,14 @@ tell application "System Events"
   if not (exists process "Music") then return "NOT_RUNNING"
 end tell
 tell application "Music"
-  if player state is not playing then return "NOT_PLAYING"
   set t to name of current track
   set a to artist of current track
   set al to album of current track
   set d to duration of current track
   set p to player position
-  return t & "\\n" & a & "\\n" & al & "\\n" & d & "\\n" & p
+  set playingFlag to "false"
+  if player state is playing then set playingFlag to "true"
+  return t & "\\n" & a & "\\n" & al & "\\n" & d & "\\n" & p & "\\n" & playingFlag
 end tell`;
 
 export class AppleScriptBackend implements PlayerBackend {
@@ -53,7 +55,7 @@ export class AppleScriptBackend implements PlayerBackend {
                     album: parts[2],
                     duration: parseFloat(parts[3]) * 1000,
                     position: parseFloat(parts[4]) * 1000,
-                    isPlaying: true,
+                    isPlaying: parts[5] !== 'false',
                     source: 'applescript',
                 });
             });
