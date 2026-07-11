@@ -9,11 +9,19 @@ private let debugMode = CommandLine.arguments.contains("--debug")
 private var didFinish = false
 private var latestInfo: NSDictionary?
 private var systemPlaybackState: Int?
+private var nowPlayingApplicationPID: Int32?
+private var nowPlayingClientInfo: [String: Any] = [:]
 
 typealias MRMediaRemoteGetNowPlayingInfoFunc = @convention(c)
     (DispatchQueue, @escaping (CFDictionary?) -> Void) -> Void
 typealias MRMediaRemoteGetNowPlayingApplicationIsPlayingFunc = @convention(c)
     (DispatchQueue, @escaping (Bool) -> Void) -> Void
+typealias MRMediaRemoteGetNowPlayingApplicationPIDFunc = @convention(c)
+    (DispatchQueue, @escaping (Int32) -> Void) -> Void
+typealias MRMediaRemoteGetNowPlayingClientFunc = @convention(c)
+    (DispatchQueue, @escaping (AnyObject?) -> Void) -> Void
+typealias MRNowPlayingClientGetStringFunc = @convention(c)
+    (AnyObject?) -> NSString?
 typealias MRMediaRemoteRegisterForNowPlayingNotificationsFunc = @convention(c)
     (DispatchQueue) -> Void
 typealias MRMediaRemoteUnregisterForNowPlayingNotificationsFunc = @convention(c)
@@ -36,6 +44,22 @@ guard let getNowPlayingInfo = loadSymbol(
 let getNowPlayingApplicationIsPlaying = loadSymbol(
     "MRMediaRemoteGetNowPlayingApplicationIsPlaying",
     as: MRMediaRemoteGetNowPlayingApplicationIsPlayingFunc.self
+)
+let getNowPlayingApplicationPID = loadSymbol(
+    "MRMediaRemoteGetNowPlayingApplicationPID",
+    as: MRMediaRemoteGetNowPlayingApplicationPIDFunc.self
+)
+let getNowPlayingClient = loadSymbol(
+    "MRMediaRemoteGetNowPlayingClient",
+    as: MRMediaRemoteGetNowPlayingClientFunc.self
+)
+let getClientBundleIdentifier = loadSymbol(
+    "MRNowPlayingClientGetBundleIdentifier",
+    as: MRNowPlayingClientGetStringFunc.self
+)
+let getClientParentBundleIdentifier = loadSymbol(
+    "MRNowPlayingClientGetParentAppBundleIdentifier",
+    as: MRNowPlayingClientGetStringFunc.self
 )
 let registerForNowPlayingNotifications = loadSymbol(
     "MRMediaRemoteRegisterForNowPlayingNotifications",
@@ -66,16 +90,30 @@ let stateObserver = notificationCenter.addObserver(
     }
     requestNowPlayingInfo()
 }
+let isPlayingObserver = notificationCenter.addObserver(
+    forName: Notification.Name("kMRMediaRemoteNowPlayingApplicationIsPlayingDidChangeNotification"),
+    object: nil,
+    queue: nil
+) { notification in
+    if let isPlaying = notification.userInfo?["kMRMediaRemoteNowPlayingApplicationIsPlayingUserInfoKey"] as? Bool {
+        systemPlaybackState = isPlaying ? 1 : 2
+    }
+    requestNowPlayingInfo()
+}
 
 getNowPlayingApplicationIsPlaying?(updateQueue) { isPlaying in
-    systemPlaybackState = isPlaying ? 1 : nil
+    systemPlaybackState = isPlaying ? 1 : 2
     requestNowPlayingInfo()
 }
 
 requestNowPlayingInfo()
+requestNowPlayingClient()
+requestNowPlayingApplicationPID()
 for delay in [0.15, 0.5, 1.0] {
     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
         requestNowPlayingInfo()
+        requestNowPlayingClient()
+        requestNowPlayingApplicationPID()
     }
 }
 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -99,6 +137,29 @@ private func requestNowPlayingInfo() {
     }
 }
 
+private func requestNowPlayingApplicationPID() {
+    getNowPlayingApplicationPID?(updateQueue) { pid in
+        nowPlayingApplicationPID = pid
+    }
+}
+
+private func requestNowPlayingClient() {
+    getNowPlayingClient?(updateQueue) { client in
+        guard let client else {
+            nowPlayingClientInfo = ["present": false]
+            return
+        }
+
+        nowPlayingClientInfo = [
+            "present": true,
+            "bundleIdentifier": clientString(client, getClientBundleIdentifier) ?? NSNull(),
+            "parentBundleIdentifier": clientString(client, getClientParentBundleIdentifier) ?? NSNull(),
+            "displayName": performStringSelector(client, "displayName") ?? NSNull(),
+            "className": String(describing: type(of: client))
+        ]
+    }
+}
+
 private func finish(with dict: NSDictionary?) {
     finishLock.lock()
     if didFinish {
@@ -110,6 +171,7 @@ private func finish(with dict: NSDictionary?) {
 
     notificationCenter.removeObserver(infoObserver)
     notificationCenter.removeObserver(stateObserver)
+    notificationCenter.removeObserver(isPlayingObserver)
     unregisterForNowPlayingNotifications?()
     dlclose(mediaRemote)
 
@@ -207,9 +269,15 @@ private func debugInfo(reason: String, info: NSDictionary?) -> [String: Any] {
         "mediaRemotePath": mediaRemotePath,
         "hasGetNowPlayingInfo": true,
         "hasGetNowPlayingApplicationIsPlaying": getNowPlayingApplicationIsPlaying != nil,
+        "hasGetNowPlayingApplicationPID": getNowPlayingApplicationPID != nil,
+        "hasGetNowPlayingClient": getNowPlayingClient != nil,
+        "hasClientBundleIdentifier": getClientBundleIdentifier != nil,
+        "hasClientParentBundleIdentifier": getClientParentBundleIdentifier != nil,
         "hasRegisterForNowPlayingNotifications": registerForNowPlayingNotifications != nil,
         "hasUnregisterForNowPlayingNotifications": unregisterForNowPlayingNotifications != nil,
         "systemPlaybackState": playbackStateValue,
+        "nowPlayingApplicationPID": nowPlayingApplicationPID.map { NSNumber(value: $0) } ?? NSNull(),
+        "nowPlayingClient": nowPlayingClientInfo,
         "arguments": CommandLine.arguments
     ]
 
@@ -228,6 +296,23 @@ private func debugInfo(reason: String, info: NSDictionary?) -> [String: Any] {
     debug["rawKeys"] = keys
     debug["raw"] = raw
     return debug
+}
+
+private func clientString(_ client: AnyObject, _ getter: MRNowPlayingClientGetStringFunc?) -> Any? {
+    guard let value = getter?(client) else {
+        return nil
+    }
+    return value as String
+}
+
+private func performStringSelector(_ object: AnyObject, _ selectorName: String) -> Any? {
+    let selector = NSSelectorFromString(selectorName)
+    guard object.responds(to: selector),
+          let unmanaged = object.perform(selector),
+          let value = unmanaged.takeUnretainedValue() as? NSString else {
+        return nil
+    }
+    return value as String
 }
 
 private func jsonSafeValue(_ value: Any?) -> Any {

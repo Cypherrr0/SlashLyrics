@@ -1,7 +1,7 @@
 {
     "name": "slashlyrics",
     "displayName": "SlashLyrics",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Display currently playing music lyrics as ghost comments in VS Code",
     "publisher": "slashlyrics",
     "private": false,

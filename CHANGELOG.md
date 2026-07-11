@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.6] - 2026-07-11
+
+### Changed
+- Extended Now Playing diagnostics with MediaRemote client bundle identifiers, display name, and current application PID to identify which app macOS reports as the active media client.
+- Listen for both known MediaRemote playing-state notification names when collecting Now Playing diagnostics.
+
 ## [0.1.5] - 2026-07-11
 
 ### Added
