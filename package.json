@@ -1,7 +1,7 @@
 {
     "name": "slashlyrics",
     "displayName": "SlashLyrics",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "Display currently playing music lyrics as ghost comments in VS Code",
     "publisher": "slashlyrics",
     "private": false,
@@ -48,6 +48,10 @@
             {
                 "command": "slashlyrics.clearCache",
                 "title": "SlashLyrics: Clear Cache"
+            },
+            {
+                "command": "slashlyrics.diagnoseNowPlaying",
+                "title": "SlashLyrics: Diagnose Now Playing"
             }
         ],
         "configuration": {

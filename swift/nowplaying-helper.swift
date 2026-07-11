@@ -4,6 +4,7 @@ import Foundation
 private let mediaRemotePath = "/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote"
 private let updateQueue = DispatchQueue(label: "slashlyrics.mediaremote.update")
 private let finishLock = NSLock()
+private let debugMode = CommandLine.arguments.contains("--debug")
 
 private var didFinish = false
 private var latestInfo: NSDictionary?
@@ -113,13 +114,13 @@ private func finish(with dict: NSDictionary?) {
     dlclose(mediaRemote)
 
     guard let dict else {
-        printJSON(["isPlaying": false])
+        printJSON(notPlayingResult(reason: "no now playing info"))
         exit(0)
     }
 
     let title = stringValue(dict, "kMRMediaRemoteNowPlayingInfoTitle")
     guard !title.isEmpty else {
-        printJSON(["isPlaying": false])
+        printJSON(notPlayingResult(reason: "missing title", info: dict))
         exit(0)
     }
 
@@ -130,7 +131,7 @@ private func finish(with dict: NSDictionary?) {
     let playbackRate = optionalDoubleValue(dict, "kMRMediaRemoteNowPlayingInfoPlaybackRate")
     let isPlaying = systemPlaybackState.map { $0 == 1 } ?? playbackRate.map { $0 != 0 } ?? true
 
-    let result: [String: Any] = [
+    var result: [String: Any] = [
         "title": title,
         "artist": artist,
         "album": album,
@@ -138,6 +139,9 @@ private func finish(with dict: NSDictionary?) {
         "position": currentPosition(elapsed: elapsed, info: dict, isPlaying: isPlaying) * 1000,
         "isPlaying": isPlaying
     ]
+    if debugMode {
+        result["debug"] = debugInfo(reason: "ok", info: dict)
+    }
 
     printJSON(result)
     exit(0)
@@ -183,6 +187,72 @@ private func currentPosition(elapsed: Double, info: NSDictionary, isPlaying: Boo
         return elapsed
     }
     return max(0, elapsed + Date().timeIntervalSince(timestamp))
+}
+
+private func notPlayingResult(reason: String, info: NSDictionary? = nil) -> [String: Any] {
+    var result: [String: Any] = [
+        "isPlaying": false,
+        "reason": reason
+    ]
+    if debugMode {
+        result["debug"] = debugInfo(reason: reason, info: info)
+    }
+    return result
+}
+
+private func debugInfo(reason: String, info: NSDictionary?) -> [String: Any] {
+    let playbackStateValue: Any = systemPlaybackState.map { NSNumber(value: $0) } ?? NSNull()
+    var debug: [String: Any] = [
+        "reason": reason,
+        "mediaRemotePath": mediaRemotePath,
+        "hasGetNowPlayingInfo": true,
+        "hasGetNowPlayingApplicationIsPlaying": getNowPlayingApplicationIsPlaying != nil,
+        "hasRegisterForNowPlayingNotifications": registerForNowPlayingNotifications != nil,
+        "hasUnregisterForNowPlayingNotifications": unregisterForNowPlayingNotifications != nil,
+        "systemPlaybackState": playbackStateValue,
+        "arguments": CommandLine.arguments
+    ]
+
+    guard let info else {
+        debug["rawKeyCount"] = 0
+        debug["raw"] = [:]
+        return debug
+    }
+
+    let keys = info.allKeys.compactMap { $0 as? String }.sorted()
+    var raw: [String: Any] = [:]
+    for key in keys {
+        raw[key] = jsonSafeValue(info[key])
+    }
+    debug["rawKeyCount"] = keys.count
+    debug["rawKeys"] = keys
+    debug["raw"] = raw
+    return debug
+}
+
+private func jsonSafeValue(_ value: Any?) -> Any {
+    switch value {
+    case let value as String:
+        return value
+    case let value as NSNumber:
+        return value
+    case let value as Date:
+        return value.timeIntervalSince1970
+    case let value as Data:
+        return "<data \(value.count) bytes>"
+    case let value as NSArray:
+        return value.map { jsonSafeValue($0) }
+    case let value as NSDictionary:
+        var dict: [String: Any] = [:]
+        for (key, val) in value {
+            dict[String(describing: key)] = jsonSafeValue(val)
+        }
+        return dict
+    case .some(let value):
+        return String(describing: value)
+    case .none:
+        return NSNull()
+    }
 }
 
 private func printJSON(_ dict: [String: Any]) {

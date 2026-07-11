@@ -13,8 +13,9 @@ export function activate(context: vscode.ExtensionContext): void {
     logger = vscode.window.createOutputChannel('SlashLyrics', { log: true });
     logger.info('[SlashLyrics] Extension activated');
 
+    const mediaRemoteBackend = new MediaRemoteBackend(context.extensionPath, logger);
     const backends: PlayerBackend[] = [
-        new MediaRemoteBackend(context.extensionPath),
+        mediaRemoteBackend,
         new AppleScriptBackend(),
     ];
 
@@ -51,6 +52,16 @@ export function activate(context: vscode.ExtensionContext): void {
             lyricsManager.resetTrack();
             vscode.window.showInformationMessage('SlashLyrics: Cache cleared');
             logger.info('[Lyrics] Cache cleared');
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('slashlyrics.diagnoseNowPlaying', async () => {
+            const report = await mediaRemoteBackend.diagnose();
+            logger.info(report);
+            logger.show(true);
+            await vscode.env.clipboard.writeText(report);
+            vscode.window.showInformationMessage('SlashLyrics: Now Playing diagnostics copied to clipboard');
         }),
     );
 

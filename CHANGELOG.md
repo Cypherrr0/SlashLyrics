@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5] - 2026-07-11
+
+### Added
+- Added `SlashLyrics: Diagnose Now Playing`, which runs the packaged MediaRemote helper, opens the SlashLyrics output channel, and copies the raw diagnostic report to the clipboard.
+
+### Changed
+- Log MediaRemote helper failures instead of silently falling back, so missing helpers, execution errors, empty output, and invalid JSON are visible in the SlashLyrics output channel.
+
 ## [0.1.4] - 2026-07-11
 
 ### Fixed
