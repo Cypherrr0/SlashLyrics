@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.4] - 2026-07-11
+
+### Fixed
+- Reworked the macOS MediaRemote helper to register Now Playing notifications before reading metadata, matching the approach used by LyricsX's MusicPlayer backend.
+- Packaged the macOS helper as a universal binary so both Apple Silicon and Intel Macs can capture system Now Playing metadata.
+
 ## [0.1.3] - 2026-07-11
 
 ### Fixed

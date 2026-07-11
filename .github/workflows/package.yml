@@ -40,6 +40,11 @@ jobs:
           unzip -l "$VSIX"
           unzip -l "$VSIX" | grep 'extension/bin/nowplaying-helper'
           unzip -l "$VSIX" | grep 'extension/assets/icon.png'
+          unzip -p "$VSIX" extension/bin/nowplaying-helper > /tmp/nowplaying-helper
+          file /tmp/nowplaying-helper
+          file /tmp/nowplaying-helper | grep 'universal binary'
+          lipo -archs /tmp/nowplaying-helper | grep 'arm64'
+          lipo -archs /tmp/nowplaying-helper | grep 'x86_64'
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
