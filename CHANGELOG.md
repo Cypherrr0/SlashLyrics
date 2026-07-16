@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Recover the current NetEase track from CEF player artwork and the online playback cache when NetEase 3.0.20 local-storage encryption prevents decoding `playingInfo` and `lastPlaying`.
+- Stop stale `historyTracks` rows from pinning the final lyric of an old song.
+- Prevent overlapping asynchronous polls and discard results from stopped or restarted polling sessions.
+
+### Changed
+- Prefer the last successful player backend to avoid the MediaRemote timeout on every NetEase poll.
+- Reduce the default polling interval from 1000 ms to 250 ms for more responsive lyric transitions.
+
 ## [0.1.7] - 2026-07-12
 
 ### Fixed

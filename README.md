@@ -61,7 +61,7 @@ Release asset: [slashlyrics-0.1.7.vsix](https://github.com/Cypherrr0/SlashLyrics
 | `slashlyrics.showTranslation` | `false` | Show translated lyrics alongside the original line. |
 | `slashlyrics.translationSeparator` | ` &#124; ` | Separator between original and translated lyrics. |
 | `slashlyrics.providers` | `["netease", "qq"]` | Lyrics provider priority. |
-| `slashlyrics.pollInterval` | `1000` | Polling interval in milliseconds while music is playing. |
+| `slashlyrics.pollInterval` | `250` | Polling interval in milliseconds while music is playing. |
 | `slashlyrics.pauseOnBlur` | `false` | Pause polling when the editor loses focus. |
 
 ## Local Development

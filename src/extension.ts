@@ -17,11 +17,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const mediaRemoteBackend = new MediaRemoteBackend(context.extensionPath, logger);
     const neteaseBackend = new NeteaseBackend(logger);
-    const backends: PlayerBackend[] = [
-        mediaRemoteBackend,
-        neteaseBackend,
-        new AppleScriptBackend(),
-    ];
+    const appleScriptBackend = new AppleScriptBackend();
 
     const config = vscode.workspace.getConfiguration('slashlyrics');
     const providerOrder = config.get<string[]>('providers', ['netease', 'qq']);
@@ -31,7 +27,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
     let enabled = config.get<boolean>('enabled', true);
     let pollTimer: ReturnType<typeof setInterval> | undefined;
+    let pollInFlight = false;
+    let pollEpoch = 0;
     let lastTrackKey = '';
+    let lastSource: NowPlaying['source'] | undefined;
 
     context.subscriptions.push(decoration, statusBar, logger);
 
@@ -79,48 +78,74 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
     );
 
-    async function poll(): Promise<void> {
-        if (!enabled) return;
+    async function poll(epoch: number): Promise<void> {
+        // setInterval does not await async callbacks. SQLite can wait on a
+        // NetEase write lock, so guard against overlapping child processes and
+        // discard results from polling sessions that were stopped/restarted.
+        if (!enabled || epoch !== pollEpoch || pollInFlight) return;
+        pollInFlight = true;
 
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
+        try {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
 
-        const nowPlaying = await getNowPlayingFromBackends(backends, (backendName, elapsedMs) => {
-            logger.debug(`[Perf] ${backendName}: ${elapsedMs.toFixed(1)}ms`);
-        });
+            // MediaRemote waits up to 1.5 seconds when NetEase publishes no
+            // system Now Playing data. Reuse the last successful source first
+            // so later NetEase polls go directly to the local backend.
+            const backends: PlayerBackend[] = lastSource === 'netease'
+                ? [neteaseBackend, mediaRemoteBackend, appleScriptBackend]
+                : lastSource === 'applescript'
+                    ? [appleScriptBackend, mediaRemoteBackend, neteaseBackend]
+                    : [mediaRemoteBackend, neteaseBackend, appleScriptBackend];
 
-        if (!nowPlaying) {
-            statusBar.setIdle();
-            decoration.clear(editor);
-            return;
-        }
+            const nowPlaying = await getNowPlayingFromBackends(backends, (backendName, elapsedMs) => {
+                logger.debug(`[Perf] ${backendName}: ${elapsedMs.toFixed(1)}ms`);
+            });
+            if (!enabled || epoch !== pollEpoch) return;
 
-        const trackKey = `${nowPlaying.title}\n${nowPlaying.artist}`;
-        if (trackKey !== lastTrackKey) {
-            lastTrackKey = trackKey;
-            logger.info(`[Player] Now playing: ${nowPlaying.title} - ${nowPlaying.artist}`);
-            lyricsManager.resetTrack();
-            decoration.reset(editor);
-        }
+            if (!nowPlaying) {
+                statusBar.setIdle();
+                decoration.clear(editor);
+                return;
+            }
 
-        statusBar.updateTrack(nowPlaying);
+            lastSource = nowPlaying.source;
 
-        const lyrics = await lyricsManager.getLyrics(nowPlaying);
-        if (lyrics) {
-            decoration.update(lyrics, nowPlaying.position, editor);
-        } else {
-            decoration.clear(editor);
+            const trackKey = `${nowPlaying.title}\n${nowPlaying.artist}`;
+            if (trackKey !== lastTrackKey) {
+                lastTrackKey = trackKey;
+                logger.info(`[Player] Now playing: ${nowPlaying.title} - ${nowPlaying.artist}`);
+                lyricsManager.resetTrack();
+                decoration.reset(editor);
+            }
+
+            statusBar.updateTrack(nowPlaying);
+
+            const lyrics = await lyricsManager.getLyrics(nowPlaying);
+            if (!enabled || epoch !== pollEpoch) return;
+
+            if (lyrics) {
+                decoration.update(lyrics, nowPlaying.position, editor);
+            } else {
+                decoration.clear(editor);
+            }
+        } catch (error) {
+            logger.error(`[SlashLyrics] Poll failed: ${String(error)}`);
+        } finally {
+            pollInFlight = false;
         }
     }
 
     function startPolling(): void {
         if (pollTimer) return;
-        const interval = config.get<number>('pollInterval', 1000);
-        poll();
-        pollTimer = setInterval(poll, interval);
+        const interval = Math.max(100, config.get<number>('pollInterval', 250));
+        const epoch = ++pollEpoch;
+        void poll(epoch);
+        pollTimer = setInterval(() => void poll(epoch), interval);
     }
 
     function stopPolling(): void {
+        pollEpoch += 1;
         if (pollTimer) {
             clearInterval(pollTimer);
             pollTimer = undefined;
@@ -152,9 +177,15 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration('slashlyrics')) {
                 logger.info('[SlashLyrics] Configuration changed, reloading');
+                if (e.affectsConfiguration('slashlyrics.pollInterval') && enabled) {
+                    stopPolling();
+                    startPolling();
+                }
             }
         }),
     );
+
+    context.subscriptions.push({ dispose: stopPolling });
 }
 
 export function deactivate(): void {
