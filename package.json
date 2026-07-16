@@ -100,8 +100,9 @@
                 },
                 "slashlyrics.pollInterval": {
                     "type": "number",
-                    "default": 1000,
-                    "description": "Polling interval in ms when music is playing"
+                    "default": 250,
+                    "minimum": 100,
+                    "description": "Polling interval in ms when music is playing (recommended: 250)"
                 },
                 "slashlyrics.pauseOnBlur": {
                     "type": "boolean",
